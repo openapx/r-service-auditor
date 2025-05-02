@@ -98,6 +98,128 @@ You can find the cxapp package here [https://github.com/cxlib/r-package-cxapp](h
 <br/>
 <br/>
 
+
+### Getting Started
+The auditor service is available either pre-built container image on Docker Hub
+or as the R package `auditor.service`.
+
+<br/>
+
+#### Container Image on Docker Hub 
+
+The auditor service container image is available for multiple Linux operating 
+system flavors depending on your organization preference.
+
+```
+docker pull openapx/auditor.service:<OS>-latest
+```
+
+or choose a particular container image version.
+
+<br/>
+
+##### Service Start
+
+The service is installed in the directory `/opt/openapx/apps/auditor` (`APP_HOME`).
+
+The service is started by the standard entry point script `/entrypoint.sh` with 
+no arguments.
+
+Start up options are set in the `APP_HOME/service.properties` file.
+
+`WORKERS` specifies the number of parallel R Plumber _worker_ sessions to launch.
+A worker equates to the number of requests the service can serve concurrently. Note
+that Plumber and the way the API has been written, it is one request per R session.
+
+`LOCAL.DATABASE=ENABLE | DISABLE` enables or disables using the installed default
+internal database.
+
+_For production use, do not use the local database_.
+
+<br/>
+
+##### Service Configuration
+
+The service configuration options are set in the `APP_HOME/app.properties` file 
+and includes a default configuration (below) to quickly get started. 
+
+_Please note that currently only PostgreSQL database is supported_.
+
+There are three standard directories.
+
+- `/data` for service logs and other service data files
+- `/dbdata` for database data files when local database is enabled
+- `/.vault` used for a local internal vault
+
+<br/>
+
+
+```
+# -- default service configuration
+
+
+# -- database
+#    note: only supported vendor is postgres
+#    note: value for vendor is future use to allow for variations in SQL syntax
+DB.VENDOR = postgres
+
+DB.DRIVER = RPostgreSQL::PostgreSQL()
+DB.HOST = localhost
+DB.PORT = 5432
+DB.DATABASE = auditor
+
+#    note: the auditorsvc password for the local database is generated when  
+#          /entrypoint.sh is executed and local database is enabled
+DB.USERNAME = auditorsvc
+DB.PASSWORD = [vault] /dblocal/auditor/password
+
+
+
+# -- logging 
+LOG.PATH = /data/auditor/logs
+LOG.NAME = auditor
+LOG.ROTATION = month
+
+
+# -- vault configuration
+
+#    note: using a local vault
+#    note: Azure Key Vault also supported
+VAULT = LOCAL
+VAULT.DATA = /.vault
+
+
+# -- API authorization
+#    note: access tokens should be created 
+#    note: see reference section Authentication in the auditor service API reference
+#    note: see section API Authentication in the cxapp package https://github.com/cxlib/r-package-cxapp 
+API.AUTH.SECRETS = /test/auth/services/auditor/*
+
+```
+
+<br/>
+
+#### As an R Package
+Download and install the latest release of auditor.service from https://github.com/openapx/r-service-auditor/releases/latest
+
+You can also install the latest release directly using install.packages().
+
+```
+# -- install dependencies
+#    note: see DESCRIPTION for pacakge dependencies
+#    note: cxapp can be found at https://github.com/cxlib/r-package-cxapp
+
+install.packages( "https://github.com/openapx/r-service-auditor/releases/download/v0.0.0/auditor.service_0.0.0.tar.gz", type = "source", INSTALL_opts = "--install-tests" )
+```
+
+To install prior releases, replace the version number references in the URL.
+
+Please the default configuration for the audit service container image for 
+required configuration options.
+
+<br/>
+<br/>
+
 ### API Reference
 
 <br/>
