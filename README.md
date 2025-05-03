@@ -316,7 +316,7 @@ The following options are available.
 - `reference` common reference
 - `object`is the object hash value
 - `actor` is the service or user associated with an audited event
-- 'env' is the environment associated with an audited event 
+- `env` is the environment associated with an audited event 
 - `from` is start of the period for selecting audit records by their corresponding date
 - `to` is end of the period for selecting audit records by their corresponding date
 - `limit` is the number of records to retrieve
