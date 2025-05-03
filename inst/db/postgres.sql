@@ -20,6 +20,7 @@ create table if not exists tbl_adt_records (
    str_objecthash  varchar(128) not null,
    str_label       varchar(512) not null,
    str_actor       varchar(512) not null,
+   str_env         varchar(512) not null,
    ts_datetime     timestamp not null default current_timestamp  
 );
 

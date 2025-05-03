@@ -27,7 +27,7 @@ auditor_record <- function( x, connection = NULL ) {
   
   # -- get main record
   
-  sql <-  paste( c( "select cast(uid as varchar(128)), str_event, str_type, str_class, str_ref, str_objecthash, str_label, str_actor, ts_datetime from tbl_adt_records",
+  sql <-  paste( c( "select cast(uid as varchar(128)), str_event, str_type, str_class, str_ref, str_objecthash, str_label, str_actor, str_env, ts_datetime from tbl_adt_records",
                     "where (", 
                     paste( "uid = ", base::sQuote(base::trimws(x), q = FALSE) ), 
                     ") ;" ), collapse = " " )
@@ -41,7 +41,7 @@ auditor_record <- function( x, connection = NULL ) {
 
   # -- initialize return
   lst <- as.list( rslt_rec[1,] )
-  names(lst) <- c( "id", "event", "type", "class", "reference", "object", "label", "actor", "datetime" )
+  names(lst) <- c( "id", "event", "type", "class", "reference", "object", "label", "actor", "env", "datetime" )
   
   # - update date/time format
   lst[["datetime"]] <- format( as.POSIXct( lst[["datetime"]], tz = "UTC"), format = "%Y%m%dT%H%M%S" )

@@ -17,6 +17,8 @@
 #'   \item `object` optional hash representing the object regardless of context
 #'   \item `label` short human readable description of the event 
 #'   \item `actor` user or service that initiated/triggered the event
+#'   \item `env` is a reference to the application, service or host environment
+#'         where the event occurred
 #'   \item `attributes` a list of attributes associated with the event
 #' }
 #' 
@@ -65,9 +67,12 @@ auditor_save <- function( x, connection = NULL ) {
 
   
   # -- some constants 
+  
+  # - valid events
+  #   note: here upper case but case insensitive and stored and returned as lower case
   supported_events <- c( "CREATE", "READ", "UPDATE", "DELETE", "EXECUTE", "SIGN", "CONNECT", "DISCONNECT" )
 
-  attr_maxlengths <- c( "event" = 50, "type" = 100, "reference" = 2048, "object" = 128, "label" = 512, "actor" = 512, 
+  attr_maxlengths <- c( "event" = 50, "type" = 100, "reference" = 2048, "object" = 128, "label" = 512, "actor" = 512, "env" = 512,  
                         "attr.key" = 1024, "attr.label" = 512, "attr.qual" = 50, "attr.qualifier" = 50, "attr.value" = 1024  )
   
 
@@ -79,7 +84,7 @@ auditor_save <- function( x, connection = NULL ) {
     
   # -- create record structure
   sql_rec <- c( "insert into tbl_adt_records", 
-                "( uid, str_event, str_type, str_class, str_ref, str_objecthash, str_label, str_actor, ts_datetime )", 
+                "( uid, str_event, str_type, str_class, str_ref, str_objecthash, str_label, str_actor, str_env, ts_datetime )", 
                 "values" )
   
   sql_rec_attrvalues <- c( "insert into tbl_adt_record_attrs", 
@@ -132,13 +137,14 @@ auditor_save <- function( x, connection = NULL ) {
     
     # - trap record issues 
     #   note: this should be done better with record dump
-    if ( ! all(c( "event", "type", "reference", "label", "actor" ) %in% base::tolower(base::names(xrec)) ) )
+    if ( ! all(c( "event", "type", "reference", "label", "actor", "env" ) %in% base::tolower(base::names(xrec)) ) )
       stop( "Audit record ", as.character(xidx), " incomplete" )
     
     if ( ! base::toupper(xrec[["event"]]) %in% supported_events )
       stop( "Audit record ", as.character(xidx), " event ", base::toupper(xrec[["event"]]), " invalid" )
 
     
+
     
     # - default references in record
     
@@ -146,25 +152,32 @@ auditor_save <- function( x, connection = NULL ) {
       xrec[["class"]] <- xrec[["type"]]
 
     if ( ! "object" %in% names(xrec) )
-      xrec[["object"]] <- digest::digest( paste( "arn", "object", xrec[["type"]], xrec[["class"]], xrec[["reference"]], collapse = ":" ), algo = "sha1", file = FALSE )
+      xrec[["object"]] <- digest::digest( paste( "object", xrec[["type"]], xrec[["class"]], xrec[["reference"]], collapse = ":" ), algo = "sha1", file = FALSE )
     
     
     
     # - generate SQL 
-    #   note: sequence uid, str_event, str_type, str_class, str_objecthash, str_label, str_actor, ts_date
+    #   note: sequence uid, str_event, str_type, str_class, str_objecthash, str_label, str_actor, str_env, ts_date, 
     #   note: verify with above
     
     rec_obs <- c( base::sQuote( uid_rec, q = FALSE ) ) 
                   
-    for ( xitem in c( "event", "type", "class", "reference", "object", "label", "actor" ) ) {
+    for ( xitem in c( "event", "type", "class", "reference", "object", "label", "actor", "env" ) ) {
       
       xitem_val <- base::trimws(xrec[[ xitem ]] )
+
+            
+      # - invalid characters
+      if ( xitem %in% c( "type", "class", "reference" ) )
+        xrec[[ xitem ]] <- base::gsub( "[^A-Z0-9\\.\\_\\-]", "\\_", xrec[[ xitem ]], ignore.case = TRUE ) 
+      
 
       if ( xitem == "label" )
         xitem_val <- utils::URLencode( base::trimws(xrec[[ xitem ]] ), reserved = TRUE )
 
       if ( xitem != "label" )
         xitem_val <- base::tolower(base::trimws(xrec[[ xitem ]] ))
+
       
       # - check for max value length
       if ( xitem %in% names(attr_maxlengths) && ( base::nchar(xitem_val) > attr_maxlengths[xitem] ) ) {
@@ -213,13 +226,17 @@ auditor_save <- function( x, connection = NULL ) {
             stop( "Audit record ", as.character(xidx), " attribute ", xkey, " length is too long" )
 
 
+        # - invalid characters in key
+        xattr[[ "key" ]] <- base::gsub( "[^A-Z0-9\\.\\_\\-]", "\\_", xattr[["key"]], ignore.case = TRUE ) 
+        
+        
+        
         qual <- ""
         
         if ( any( c("qual", "qualifier") %in% names(xattr) ) )
-          qual <- base::trimws(utils::head(xattr[ c( "qual", "qualifies") ], n = 1))
+          qual <- utils::URLencode( base::trimws(utils::head(xattr[ c( "qual", "qualifies") ], n = 1)), reserved = TRUE )
 
-        
-        
+
         
         # -- chunk the value
         
@@ -298,9 +315,10 @@ auditor_save <- function( x, connection = NULL ) {
   uid_link <- uuid::UUIDgenerate()
   
 
-  for ( xlink in lst_linked )
-    lst_rec_links <- append( lst_rec_links, 
-                             paste0( "(", base::sQuote( uid_link, q = FALSE ), ", ", base::sQuote( xlink, q = FALSE), ")" ) )
+  if ( length(lst_linked) > 1 )
+    for ( xlink in lst_linked )
+      lst_rec_links <- append( lst_rec_links, 
+                               paste0( "(", base::sQuote( uid_link, q = FALSE ), ", ", base::sQuote( xlink, q = FALSE), ")" ) )
     
 
   
@@ -315,9 +333,11 @@ auditor_save <- function( x, connection = NULL ) {
   
   sql["records"] <- paste( c( sql_rec, paste( lst_rec, collapse = ","), ";" ), collapse = " " )
   
-  sql["attributes"] <- paste( c( sql_rec_attrvalues, paste( lst_rec_attr, collapse =  ","), ";" ), collapse = " " )
+  if ( length(lst_rec_attr) > 0 )
+    sql["attributes"] <- paste( c( sql_rec_attrvalues, paste( lst_rec_attr, collapse =  ","), ";" ), collapse = " " )
   
-  sql["links"] <- paste( c( sql_rec_links, paste( lst_rec_links, collapse = ","), ";" ), collapse = " " )
+  if ( length(lst_rec_links) > 0 )
+    sql["links"] <- paste( c( sql_rec_links, paste( lst_rec_links, collapse = ","), ";" ), collapse = " " )
 
   
   # -- save to database 
@@ -330,7 +350,7 @@ auditor_save <- function( x, connection = NULL ) {
     stop( "Could not start transaction" )
 
   for ( xcontext in c( "records", "attributes", "links") )  
-    if ( ! is.na(sql[xcontext]) )
+    if ( xcontext %in% names(sql) && ! is.na(sql[xcontext]) )
       dbupdates[ xcontext ] <- DBI::dbExecute( connection, sql[xcontext] )
 
 
@@ -342,10 +362,10 @@ auditor_save <- function( x, connection = NULL ) {
     return(invisible(FALSE))
   }
 
-  
-  if ( ( length(lst_rec) != dbupdates[ "records" ] ) ||
-       ( length(lst_rec_attr) != dbupdates[ "attributes" ] ) ||
-       ( length(lst_rec_links) != dbupdates[ "links" ] ) )
+
+  if ( is.na(dbupdates[ "records" ]) || ( length(lst_rec) != dbupdates[ "records" ] ) ||
+       ( ! is.na(dbupdates[ "attributes" ]) && ( length(lst_rec_attr) != dbupdates[ "attributes" ] ) ) ||
+       ( ! is.na(dbupdates[ "links" ]) && ( length(lst_rec_links) != dbupdates[ "links" ] ) ) )
     stop( "Not all audit records committed" )
   
    
