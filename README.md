@@ -261,6 +261,7 @@ The returned records are in the format of a JSON array of audit record objects.
     "object": "<object hash>",
     "label": "<record label>",
     "actor": "<actor>",
+    "env": "<environment>",
     "datetime": "<record date and time>"
   },
   ...
@@ -281,6 +282,9 @@ and time is provided without timezone.
 
 The `actor`value represents the user or service who performed or initiated the 
 event or action.
+
+The `env` value represent the environment where the actions was performed or 
+initiated.
 
 See section Create Audit Records for specific details on the returned properties.
 
@@ -311,7 +315,8 @@ The following options are available.
 - `class` further classifies the type of object, such as `sdtm` for type `datafile`
 - `reference` common reference
 - `object`is the object hash value
-- `actor` is the service or user associated with the audited event
+- `actor` is the service or user associated with an audited event
+- 'env' is the environment associated with an audited event 
 - `from` is start of the period for selecting audit records by their corresponding date
 - `to` is end of the period for selecting audit records by their corresponding date
 - `limit` is the number of records to retrieve
@@ -406,6 +411,7 @@ array with each record as a separate JSON object.
     "object": "<object hash>",
     "label": "<record label>",
     "actor": "<actor>",
+    "env": "<environment>",
     "datetime": "<record date and time>"
     "attributes" : [
                      {
@@ -423,26 +429,29 @@ array with each record as a separate JSON object.
 ```
 
 The `event` defines the event or action that the audit record represents. Valid
-values are `CREATE`, `READ`, `UPDATE`, `DELETE`, `EXECUTE`, `SIGN`, `CONNECT` 
-and `DISCONNECT`. The event value is case in-sensitive but represented in lower 
+values are `create`, `read`, `update`, `delete`, `execute`, `sign`, `connect` 
+and `disconnect`. The event value is case in-sensitive but represented in lower 
 case.
 
 The object `type`, `class` and `reference` are case in-sensitive keywords and
 references used to programmatically represent the object. Valid characters are
-letters `A-Z`, digits `0-9`, period `.`and underscore `_`. Invalid characters 
-are translated to an underscore `_`.
+letters `A-Z`, digits `0-9`, period `.`, dash `-` and underscore `_`. Invalid
+characters are translated to an underscore `_`.
 
-The `object`value is optional. If not provided, the SHA-1 digest of the string
+The `object` value is optional. If not provided, the SHA-1 digest of the string
 `object:<type>:<class>:<reference>` is used. 
 
 The record `label` is a free-text field to provide a human-readable reference to
 the event or action. The `label` should be URL encoded.
 
-The `actor`value represents the user or service who performed or initiated the 
+The `actor` value represents the user or service who performed or initiated the 
 event or action. The value is stored verbatim as provided to allow for correct
 representation of the user or service. The value is not URL encoded by the service, 
 so if the actor value includes special characters, they should be submitted in 
 encoded or translated form.
+
+The `env` value represents the environment associated with the event or action.
+The value is stored verbatim and is not URL encoded.
 
 The `datetime` value is in the format `yyyymmddThhmmss` with leading zeros for 
 month, day, hour, minutes and seconds. The service assumes that the date and time
@@ -456,8 +465,8 @@ Audit record attributes permits including additional context beyond the main
 record as in the form of a key/value pair.
 
 The attribute `key` refers to the attribute programmatic reference. Valid 
-characters are letters `A-Z`, digits `0-9`, period `.`and underscore `_`. 
-Invalid characters are translated to an underscore `_`.
+characters are letters `A-Z`, digits `0-9`, period `.`, dash `-` and 
+underscore `_`. Invalid characters are translated to an underscore `_`.
 
 The value of the attribute `key` does not have to be unique within the list of 
 audit record attributes.
@@ -506,6 +515,7 @@ The returned record is in the format of a JSON object.
   "object": "<object hash>",
   "label": "<record label>",
   "actor": "<actor>",
+  "env": "<environment>,
   "datetime": "<record date and time>", 
   "attributes" : [
                      {
@@ -547,6 +557,8 @@ The audit record `label` value in URL encoded format.
 The `actor`value represents the user or service who performed or initiated the 
 event or action. The value is returned in verbatim form as provided to allow 
 for correct representation of the user or service. 
+
+The `env` value represents the environment associated with the event or action.
 
 The value of `datetime` is the record date and time in the format
 _yyyymmddThhmmss_ with hour, minutes and seconds with leading zero's. The date 
