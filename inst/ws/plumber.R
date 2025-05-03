@@ -29,7 +29,7 @@ function( req, res ) {
   if ( ! "HTTP_AUTHORIZATION" %in% names(req) ) {
     cxapp::cxapp_log("Authorization header missing", attr = log_attributes)
     res$status <- 401  # Unauthorized
-    return("Authorization header missing")
+    return(list( "error" = "Authorization header missing") )
   }
   
   
@@ -38,14 +38,14 @@ function( req, res ) {
   if ( inherits( auth_result, "try-error" ) ) {
     cxapp::cxapp_log("Authorization failed", attr = log_attributes)
     res$status <- 401  # Unauthorized
-    return("Authorization failed")
+    return(list( "error" = "Authorization failed"))
   }
   
   
   if ( ! auth_result ) {
     cxapp::cxapp_log("Access denied", attr = log_attributes)
     res$status <- 403  # Forbidden
-    return("Access denied")
+    return(list( "error" = "Access denied"))
   }
   
   
@@ -68,13 +68,23 @@ function( req, res ) {
   names(qry_lst) <- base::tolower(names(qry_lst))
   
 
-  qry_categories <- c( "event", "type", "class", "reference", "object", "actor" )
+  qry_categories <- c( "event", "type", "class", "reference", "object", "actor", "env" )
   
   qry_filter <- list()
 
   for ( xcat in qry_categories )
-    if ( xcat %in% names(qry_lst) ) 
-      qry_filter[[ paste0( xcat, "s") ]] <- base::trimws(base::unlist(base::strsplit( qry_lst[[ xcat ]], ",", fixed = TRUE ), use.names = FALSE ))
+    if ( xcat %in% names(qry_lst) ) {
+      
+      xcat_ref <- paste0( xcat, "s")
+      
+      if ( ! xcat_ref %in% names(qry_filter) )
+        qry_filter[[ xcat_ref ]] <- character(0)
+
+      # - append to manage ?opt=value&opt=value2      
+      qry_filter[[ xcat_ref ]] <- append( qry_filter[[ xcat_ref ]],
+                                          base::trimws(base::unlist(base::strsplit( qry_lst[[ xcat ]], ",", fixed = TRUE ), use.names = FALSE )) )
+      
+    }
 
   
   # -- date range
@@ -111,8 +121,11 @@ function( req, res ) {
 
   pool::poolReturn(dbcon)
 
+  
 
   if ( inherits( qry_result, "try-error" ) ) {
+    print(qry_result)
+    
     res$status <- 500 # Internal error
     return( list( "error" = paste( "Failed to retrieve list of audit records" ) ) )
   }
@@ -159,23 +172,23 @@ function( req, res ) {
   if ( ! "HTTP_AUTHORIZATION" %in% names(req) ) {
     cxapp::cxapp_log("Authorization header missing", attr = log_attributes)
     res$status <- 401  # Unauthorized
-    return("Authorization header missing")
+    return(list( "error" = "Authorization header missing"))
   }
   
   
-  auth_result <- try( cxapp::cxapp_authapi( req$HTTP_AUTHORIZATION ), silent = TRUE )
+  auth_result <- try( cxapp::cxapp_authapi( req$HTTP_AUTHORIZATION ), silent = FALSE )
   
   if ( inherits( auth_result, "try-error" ) ) {
     cxapp::cxapp_log("Authorization failed", attr = log_attributes)
     res$status <- 401  # Unauthorized
-    return("Authorization failed")
+    return(list( "error" = "Authorization failed"))
   }
   
   
   if ( ! auth_result ) {
     cxapp::cxapp_log("Access denied", attr = log_attributes)
     res$status <- 403  # Forbidden
-    return("Access denied")
+    return(list( "error" = "Access denied"))
   }
   
   
@@ -197,12 +210,12 @@ function( req, res ) {
   audit_records <- list()
   
   if ( ! is.null(req$postBody) && ! any(is.na(req$postBody)) && (length(req$postBody) != 0) && ( base::trimws(base::as.character( utils::head(req$postBody, n = 1) )) != "" ) )
-    audit_records <- try( jsonlite::fromJSON( req$postBody, simplifyDataFrame = FALSE, simplifyMatrix = FALSE ), silent = TRUE )
+    audit_records <- try( jsonlite::fromJSON( req$postBody, simplifyDataFrame = FALSE, simplifyMatrix = FALSE ), silent = FALSE )
   
   if ( inherits( audit_records, "try-error" ) ) {
     cxapp::cxapp_log("Audit records not in a valid format", attr = log_attributes)
     res$status <- 400  # Bad request
-    return("Invalid record format provided")    
+    return(list( "error" = "Invalid record format provided"))
   }
 
   # note: auditor_save() currently expecting a list of lists
@@ -215,13 +228,13 @@ function( req, res ) {
   dbpool <- base::get(".auditor.dbpool", envir = .GlobalEnv) 
   dbcon <- pool::poolCheckout( dbpool )
   
-  post_result <- try( auditor.service::auditor_save( audit_records, connection = dbcon ), silent = TRUE )
+  post_result <- try( auditor.service::auditor_save( audit_records, connection = dbcon ), silent = FALSE )
   
   pool::poolReturn(dbcon)
 
   if ( inherits( post_result, "try-error" ) || ! post_result ) {
     res$status <- 500 # Internal error
-    return( list( "error" = paste( "Failed to register audit records" ) ) )
+    return(list( "error" = "Failed to register audit records"))
   }
 
   
@@ -231,7 +244,7 @@ function( req, res ) {
     
   res$status <- 201  # Created
 
-  return( paste( as.character(length(audit_records)), "audit record(s) registered" ) )  
+  return(list( "message" = paste( as.character(length(audit_records)), "audit record(s) registered" ) ))  
 }
 
 
@@ -437,13 +450,13 @@ function( req, res ) {
   lst_dbcfg <- list()
   
   for( xopt in c( "db.vendor", "db.driver", "db.host", "db.port", "db.username" ) )
-    lst_dbcfg[[ xopt ]] <- cfg$option( xopt, unset = "<not defined>" )
+    lst_dbcfg[[ xopt ]] <- cfg$option( xopt, unset = "<not set>" )
   
-  lst_dbcfg[["db.password"]] <- ifelse( is.na( cfg$option( "db.password", unset = NA) ), "<not defined>", "<defined>" )
+  lst_dbcfg[["db.password"]] <- ifelse( is.na( cfg$option( "db.password", unset = NA) ), "<not set>", "<set>" )
     
 
   for( xopt in c( "db.pool.minsize", "db.pool.maxsize", "db.pool.idletimeout" ) )
-    lst_dbcfg[[ xopt ]] <- cfg$option( xopt, unset = "<not defined>" )
+    lst_dbcfg[[ xopt ]] <- cfg$option( xopt, unset = "<default>" )
   
 
   lst[["database"]][["configuration"]] <- lst_dbcfg
