@@ -79,7 +79,10 @@ start <- function( port = 12345 ) {
                         idleTimeout = cfg$option( "DB.POOL.IDLETIMEOUT", unset = 120) ),
           envir = .GlobalEnv )
 
-  cxapp::cxapp_log( paste( "Database pool started with",
+  cxapp::cxapp_log( paste( "Database connection pool to host",
+                           cfg$option( "DB.HOST", unset = "localhost"),
+                           paste0( "(port ", cfg$option( "DB.PORT", unset = "NA"), ")"),
+                           "started with",
                            cfg$option( "DB.POOL.MINSIZE", unset = 1), "minimum and",
                            cfg$option( "DB.POOL.MAXSIZE", unset = 25), "maximum connections.") )
   
