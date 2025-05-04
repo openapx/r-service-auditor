@@ -38,12 +38,12 @@ COPY --chmod=755 .scripts/deploy-* /scripts
 #     /scripts/deploy-nginx-proxy.sh && \
 #     rm -Rf /scripts
 
-RUN ls -alF /scripts
+RUN ls -alF /scripts/*
 
 RUN /opt/openapx/utilities/container-id.sh
-RUN /opt/openapx/utilities/bin-libs.sh /opt/openapx/config/auditorservice/libs-${OPENAPX_IMAGEOS} 
-RUN /scripts/deploy-auditor.sh 
-RUN /scripts/deploy-nginx-proxy.sh 
+RUN /opt/openapx/utilities/bin-libs.sh /opt/openapx/config/auditorservice/libs-${OPENAPX_IMAGEOS}
+RUN /scripts/deploy-auditor.sh
+RUN /scripts/deploy-nginx-proxy.sh
 RUN rm -Rf /scripts
 
 
