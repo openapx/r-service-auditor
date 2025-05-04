@@ -144,7 +144,6 @@ cd ${CURRENT_WD}
 
 
 echo "   - R package install sources"
-find /sources/R-packages -maxdepth 1 -type f
 
 find /sources/R-packages -maxdepth 1 -type f -exec bash -c '_MD5=($(md5sum $1)); _SHA256=($(sha256sum $1)); echo "   $(basename $1)   (MD-5 ${_MD5} / SHA-256 ${_SHA256})"' _ {} \;
 
@@ -178,7 +177,7 @@ mkdir -p /.vault/dblocal/postgres
 tr -dc A-Za-z0-9 </dev/urandom | head -c 30 > /.vault/dblocal/postgres/password
 
 su postgres -c 'bash -s' << EOF
-psql -c "ALTER USER postgres PASSWORD '$(cat /.vault/dblocal/postgres/password)';"
+psql --quiet -c "ALTER USER postgres PASSWORD '$(cat /.vault/dblocal/postgres/password)';"
 EOF
 
 
@@ -195,9 +194,9 @@ tr -dc A-Za-z0-9 </dev/urandom | head -c 30 > /.vault/dblocal/auditorsvc/passwor
 
 # - create database
 su postgres -c 'bash -s' <<EOF
-psql -c "CREATE DATABASE auditor WITH ENCODING=UTF8;"
-psql -c "CREATE USER auditorsvc WITH ENCRYPTED PASSWORD '$(cat /.vault/dblocal/auditorsvc/password)';"
-psql -d auditor -f /opt/openapx/apps/auditor/library/auditor.service/db/postgres.sql
+psql --quiet -c "CREATE DATABASE auditor WITH ENCODING=UTF8;"
+psql --quiet -c "CREATE USER auditorsvc WITH ENCRYPTED PASSWORD '$(cat /.vault/dblocal/auditorsvc/password)';"
+psql --quiet -d auditor -f /opt/openapx/apps/auditor/library/auditor.service/db/postgres.sql
 EOF
 
 
