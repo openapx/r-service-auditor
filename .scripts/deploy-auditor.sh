@@ -79,7 +79,7 @@ curl -sL -o /sources/R-packages/${CXAPP_SOURCE} ${SOURCE_URL}
 _MD5=($(md5sum /sources/R-packages/${CXAPP_SOURCE}))
 _SHA256=($(sha256sum /sources/R-packages/${CXAPP_SOURCE}))
 
-echo "      downloaded ${CXAPP_SOURCE} (MD5 ${_MD5} / SHA-256 ${_SHA256})"
+echo "      ${CXAPP_SOURCE}   (MD5 ${_MD5} / SHA-256 ${_SHA256})"
 
 unset _MD5
 unset _SHA256
@@ -106,7 +106,7 @@ curl -sL -o /sources/R-packages/${AUDITOR_SOURCE} ${SOURCE_URL}
 _MD5=($(md5sum /sources/R-packages/${AUDITOR_SOURCE}))
 _SHA256=($(sha256sum /sources/R-packages/${AUDITOR_SOURCE}))
 
-echo "      ${AUDITOR_SOURCE} (MD5 ${_MD5} / SHA-256 ${_SHA256})"
+echo "      ${AUDITOR_SOURCE}   (MD5 ${_MD5} / SHA-256 ${_SHA256})"
 
 unset _MD5
 unset _SHA256
@@ -124,18 +124,18 @@ CURRENT_WD=${pwd}
 cd ${APP_HOME}
 
 echo "    - install locations (first in list)"
-Rscript -e "cat( c( paste0( \"      \", .libPaths()), \"--\", \" \"), sep = \"\n\" )"
+Rscript -e "cat( c( paste0( \"      \", .libPaths()), \"      --\"), sep = \"\n\" )"
 
-echo "    - install dependencies"
+echo "    - install R package dependencies"
 Rscript -e "install.packages( c( \"sodium\", \"openssl\", \"plumber\", \"jsonlite\", \"pool\", \"DBI\", \"digest\", \"uuid\", \"httr2\"), type = \"source\", destdir = \"/sources/R-packages\" )" >> /logs/openapx/auditor/install-r-packages.log 2>&1
 
-echo "    - install cxapp"
+echo "    - install R package cxapp"
 Rscript -e "install.packages( \"/sources/R-packages/${CXAPP_SOURCE}\", type = \"source\", INSTALL_opts = \"--install-tests\" )" >> /logs/openapx/auditor/install-r-packages.log 2>&1
 
-echo "    - install auditor service"
+echo "    - install R package auditor service"
 Rscript -e "install.packages( \"/sources/R-packages/${AUDITOR_SOURCE}\", type = \"source\", INSTALL_opts = \"--install-tests\" )" >> /logs/openapx/auditor/install-r-packages.log 2>&1
 
-echo "    - install postgresql dependencies"
+echo "    - install R packages for PostgreSQL"
 Rscript -e "install.packages( \"RPostgreSQL\", type = \"source\", destdir = \"/sources/R-packages\" )" >> /logs/openapx/auditor/install-r-packages.log 2>&1
 
 #   restore working directory
