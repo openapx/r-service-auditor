@@ -7,7 +7,7 @@ FROM openapx/rbin:latest-${OPENAPX_IMAGEOS}-R${OPENAPX_RVERTARGET}
 
 
 # -- build arguments
-ARG OPENAPX_CONTAINERID="rcxservice-unknown"
+ARG OPENAPX_CONTAINERID="auditorservice-unknown"
 
 # -- re-declare build args under FROM
 ARG OPENAPX_IMAGEOS="ubuntu"
