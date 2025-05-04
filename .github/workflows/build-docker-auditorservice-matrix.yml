@@ -1,0 +1,90 @@
+# Simple workflow to build and publish R Compute Service container images
+
+name: Matrix -- Build and publish auditor service docker images
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - development
+    paths:
+      - libs-*
+      - docker/auditorservice/Dockerfile-auditorservice-matrix
+      - .github/workflows/build-docker-auditorservice-matrix.yml
+  workflow_dispatch:
+
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
+
+
+jobs:
+  push_to_registry:
+    name: Push auditor image Docker image to Docker Hub
+    
+    strategy:
+      matrix:
+        os: [ubuntu]
+        rversion: [4.4.3]
+      
+#        os: [ubuntu, debian, rockylinux, fedora]
+#        rversion: [4.4.2, 4.4.3]
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+      
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Note branch
+        run: echo "Branch is ${{env.BRANCH_NAME}}" 
+
+      - name: Dev build and push Docker image
+        if: ${{ env.BRANCH_NAME == 'dev' || env.BRANCH_NAME == 'development' }} 
+        id: devpush
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          build-args: |
+            OPENAPX_CONTAINERID=${{ github.repository_owner }}-auditorservice-${{ vars.VERSION_MAJOR }}.${{ vars.VERSION_MINOR }}-dev.${{ github.run_id}}-${{ matrix.os }}-R${{ matrix.rversion }}
+            OPENAPX_IMAGEOS=${{ matrix.os }}
+            OPENAPX_RVERTARGET=${{ matrix.rversion }}
+          file: docker/auditorservice/Dockerfile-auditorservice-matrix
+          push: true
+          tags: |
+            ${{ github.repository_owner }}/auditorservice:dev-${{ matrix.os }}-R${{ matrix.rversion }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+
+      - name: Prod build and push Docker image
+        if: env.BRANCH_NAME == 'main'
+        id: prodpush
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          build-args: |
+            OPENAPX_CONTAINERID=${{ github.repository_owner }}-auditorservice-${{ vars.VERSION_MAJOR}}.${{ vars.VERSION_MINOR }}.${{ github.run_number}}-${{ github.sha}}-${{ matrix.os }}-R${{ matrix.rversion }}
+            OPENAPX_IMAGEOS=${{ matrix.os }}
+            OPENAPX_RVERTARGET=${{ matrix.rversion }}
+          file: docker/auditorservice/Dockerfile-auditorservice-matrix
+          push: true
+          tags: |
+            ${{ github.repository_owner }}/auditorservice:${{ vars.VERSION_MAJOR}}.${{ vars.VERSION_MINOR }}.${{ github.run_number}}-${{ github.sha}}-${{ matrix.os }}-R${{ matrix.rversion }}
+            ${{ github.repository_owner }}/auditorservice:latest-${{ matrix.os }}-R${{ matrix.rversion }}
+          labels: ${{ steps.meta.outputs.labels }}
+

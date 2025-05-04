@@ -1,0 +1,4 @@
+libssl-dev
+libsodium-dev
+postgresql
+libpq-dev

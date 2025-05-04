@@ -1,0 +1,60 @@
+# -- build arguments
+ARG OPENAPX_IMAGEOS="ubuntu"
+ARG OPENAPX_RVERTARGET="0.0.0"
+
+# For now ... rely on latest ubuntu baseline OS
+FROM openapx/rbin:latest-${OPENAPX_IMAGEOS}-R${OPENAPX_RVERTARGET}
+
+
+# -- build arguments
+ARG OPENAPX_CONTAINERID="rcxservice-unknown"
+
+# -- re-declare build args under FROM
+ARG OPENAPX_IMAGEOS="ubuntu"
+ARG OPENAPX_RVERTARGET="0.0.0"
+
+
+
+# -- add license file to root directory
+COPY --chmod=444 LICENSE /LICENSE-rcxservice
+
+
+# -- configuration files
+#    note: this is the input location for Shell scripts below
+
+COPY --chmod=444 libs-${OPENAPX_IMAGEOS} /opt/openapx/config/rcxservice/
+
+
+
+# -- scripted sequence
+#    1) add binary library dependencies
+#    5) clean-up
+
+COPY --chmod=755 .scripts/deploy-* /scripts
+RUN /opt/openapx/utilities/container-id.sh && \
+    /opt/openapx/utilities/bin-libs.sh /opt/openapx/config/rcxservice/libs-${OPENAPX_IMAGEOS} && \
+    /scripts/deploy-auditor.sh && \
+    /scripts/deploy-nginx-proxy.sh && \
+    rm -Rf /scripts
+
+
+# -- app entrypoint 
+
+# app is configured for both HTTP (port 80) and HTTPS (port 443) but HTTP (port 80) is disabled
+# by default (not exposing port 80). In some cluster configurations, SSL certificates (HTTPS) are 
+# terminated by the cluster itself and all internal communication is via HTTP. To enable HTTP, 
+# expose port 80 below. 
+
+# HTTPS uses a self-signed SSL certificate that is created when building this container so is rotated
+# for each build.
+
+
+# -- expose standard port for HTTP
+# EXPOSE 80
+
+# - expose standard port for HTTPS
+EXPOSE 443
+
+# - entrypoint script
+COPY --chmod=755 scripts/entrypoint.sh /
+ENTRYPOINT /entrypoint.sh
