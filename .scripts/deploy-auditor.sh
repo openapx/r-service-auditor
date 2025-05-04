@@ -124,7 +124,7 @@ CURRENT_WD=${pwd}
 cd ${APP_HOME}
 
 echo "   - install locations (first in list)"
-Rscript -e "cat( c( paste0( \"    \", .libPaths()), \"    --\"), sep = \"\n\" )"
+Rscript -e "cat( c( paste0( \"   \", .libPaths()), \"   --\"), sep = \"\n\" )"
 
 echo "   - install R package dependencies"
 Rscript -e "install.packages( c( \"sodium\", \"openssl\", \"plumber\", \"jsonlite\", \"pool\", \"DBI\", \"digest\", \"uuid\", \"httr2\"), type = \"source\", destdir = \"/sources/R-packages\" )" >> /logs/openapx/auditor/install-r-packages.log 2>&1
@@ -145,7 +145,7 @@ cd ${CURRENT_WD}
 
 echo "   - R package install sources"
 
-find /sources/R-packages -maxdepth 1 -type f -exec bash -c '_MD5=($(md5sum $1)); _SHA256=($(sha256sum $1)); echo "     $(basename $1)   (MD-5 ${_MD5} / SHA-256 ${_SHA256})"' _ {} \;
+find /sources/R-packages -maxdepth 1 -type f -exec bash -c '_MD5=($(md5sum $1)); _SHA256=($(sha256sum $1)); echo "      $(basename $1)   (MD-5 ${_MD5} / SHA-256 ${_SHA256})"' _ {} \;
 
 echo "   - (end of R package install sources)"
 
