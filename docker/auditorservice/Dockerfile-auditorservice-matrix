@@ -30,7 +30,7 @@ COPY --chmod=444 libs-${OPENAPX_IMAGEOS} /opt/openapx/config/auditorservice/
 #    1) add binary library dependencies
 #    5) clean-up
 
-COPY --chmod=755 .scripts/deploy-* /scripts
+COPY --chmod=755 .scripts/deploy-* /scripts/
 
 # RUN /opt/openapx/utilities/container-id.sh && \
 #     /opt/openapx/utilities/bin-libs.sh /opt/openapx/config/auditorservice/libs-${OPENAPX_IMAGEOS} && \
