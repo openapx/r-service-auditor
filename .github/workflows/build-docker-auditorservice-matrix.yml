@@ -10,6 +10,7 @@ on:
       - development
     paths:
       - libs-*
+      - .scripts/*
       - docker/auditorservice/Dockerfile-auditorservice-matrix
       - .github/workflows/build-docker-auditorservice-matrix.yml
   workflow_dispatch:
