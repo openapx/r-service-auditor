@@ -26,58 +26,6 @@ mkdir -p ${APP_HOME}
 
 
 
-# -- local vault
-
-echo "-- local vault"
-
-mkdir /.vault
-
-
-
-# -- local database 
-#    note: postgres for now .. later probably something like SQLLite
-
-
-echo "--  local database (PostgreSQL)"
-
-# - start postgres 
-service postgresql start
-
-
-echo "    - set user postgres database password"
-
-# - generate and set database password for postgres account
-mkdir -p /.vault/dblocal/postgres
-tr -dc A-Za-z0-9 </dev/urandom | head -c 30 > /.vault/dblocal/postgres/password
-
-su postgres -c 'bash -s' << EOF
-psql -c "ALTER USER postgres PASSWORD '$(cat /.vault/dblocal/postgres/password)';"
-EOF
-
-
-
-
-# -- set up example auditor database
-
-echo "    - create auditor database"
-
-# - pre-requisite: generate database account password secret
-mkdir -p /.vault/dblocal/auditorsvc
-tr -dc A-Za-z0-9 </dev/urandom | head -c 30 > /.vault/dblocal/auditorsvc/password
-
-
-# - create database
-su postgres -c 'bash -s' <<EOF
-psql -c "CREATE DATABASE auditor WITH ENCODING=UTF8;"
-psql -c "CREATE USER auditorsvc WITH ENCRYPTED PASSWORD '$(cat /.vault/dblocal/auditorsvc/password)';"
-psql -d auditor -f /opt/openapx/apps/auditor/library/auditor.service/db/postgres.sql
-EOF
-
-
-echo "    local database initiation completed"
-service postgresql stop
-
-
 
 
 # -- configure local R session
@@ -149,8 +97,8 @@ SOURCE_ASSET=$(curl -s -H "Accept: application/vnd.github+json" \
                     -H "X-GitHub-Api-Version: 2022-11-28" \
                     https://api.github.com/repos/openapx/r-service-auditor/releases/latest )
 
-SOURCE_URL=$( echo ${SOURCE_ASSET} | jq -r '.assets[] | select( .name | match( "^rcx.service_\\d+.\\d+.\\d+.tar.gz$") ) | .browser_download_url' )
-AUDITOR_SOURCE=$( echo ${SOURCE_ASSET} | jq -r '.assets[] | select( .name | match( "^rcx.service_\\d+.\\d+.\\d+.tar.gz$") ) | .name' )
+SOURCE_URL=$( echo ${SOURCE_ASSET} | jq -r '.assets[] | select( .name | match( "^auditor.service_\\d+.\\d+.\\d+.tar.gz$") ) | .browser_download_url' )
+AUDITOR_SOURCE=$( echo ${SOURCE_ASSET} | jq -r '.assets[] | select( .name | match( "^auditor.service_\\d+.\\d+.\\d+.tar.gz$") ) | .name' )
 
 curl -sL -o /sources/R-packages/${AUDITOR_SOURCE} ${SOURCE_URL}
 
@@ -186,10 +134,67 @@ Rscript -e "install.packages( \"RPostgreSQL\", type = \"source\", destdir = \"/s
 
 
 echo "   - R package install sources"
+find /sources/R-packages -maxdepth 1 -type f
 
-find /sources/R-packages -maxdepth 1 -type f -exec bash -c '_MD5=($(md5sum $1)); _SHA256=($(sha256sum $1)); echo "   $(basename $1) (MD-5 ${_MD5} / SHA-256 ${_SHA256})"' _ {} \;
+find /sources/R-packages -maxdepth 1 -type f -exec bash -c '_MD5=($(md5sum $1)); _SHA256=($(sha256sum $1)); echo "   $(basename $1)   (MD-5 ${_MD5} / SHA-256 ${_SHA256})"' _ {} \;
 
 echo "   - (end of R package install sources)"
+
+
+
+
+# -- local vault
+
+echo "-- local vault"
+
+mkdir /.vault
+
+
+
+# -- local database 
+#    note: postgres for now .. later probably something like SQLLite
+
+
+echo "--  local database (PostgreSQL)"
+
+# - start postgres 
+service postgresql start
+
+
+echo "    - set user postgres database password"
+
+# - generate and set database password for postgres account
+mkdir -p /.vault/dblocal/postgres
+tr -dc A-Za-z0-9 </dev/urandom | head -c 30 > /.vault/dblocal/postgres/password
+
+su postgres -c 'bash -s' << EOF
+psql -c "ALTER USER postgres PASSWORD '$(cat /.vault/dblocal/postgres/password)';"
+EOF
+
+
+
+
+# -- set up example auditor database
+
+echo "    - create auditor database"
+
+# - pre-requisite: generate database account password secret
+mkdir -p /.vault/dblocal/auditorsvc
+tr -dc A-Za-z0-9 </dev/urandom | head -c 30 > /.vault/dblocal/auditorsvc/password
+
+
+# - create database
+su postgres -c 'bash -s' <<EOF
+psql -c "CREATE DATABASE auditor WITH ENCODING=UTF8;"
+psql -c "CREATE USER auditorsvc WITH ENCRYPTED PASSWORD '$(cat /.vault/dblocal/auditorsvc/password)';"
+psql -d auditor -f /opt/openapx/apps/auditor/library/auditor.service/db/postgres.sql
+EOF
+
+
+echo "    local database initiation completed"
+service postgresql stop
+
+
 
 
 echo "   - remove deployment profile"
