@@ -124,7 +124,7 @@ CURRENT_WD=${pwd}
 cx ${APP_HOME}
 
 echo "    - install locations (first in list)"
-Rscript -e "cat( c( .libPaths(), ""), sep = \"\n\" )"
+Rscript -e "cat( c( .libPaths(), "--", " "), sep = \"\n\" )"
 
 echo "    - install dependencies"
 Rscript -e "install.packages( c( \"sodium\", \"openssl\", \"plumber\", \"jsonlite\", \"pool\", \"DBI\", \"digest\", \"uuid\", \"httr2\"), type = \"source\", destdir = \"/sources/R-packages\" )" >> /logs/openapx/auditor/install-r-packages.log
