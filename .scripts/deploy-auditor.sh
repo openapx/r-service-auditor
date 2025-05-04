@@ -124,19 +124,19 @@ CURRENT_WD=${pwd}
 cd ${APP_HOME}
 
 echo "    - install locations (first in list)"
-Rscript -e "cat( c( .libPaths(), \"--\", \" \"), sep = \"\n\" )"
+Rscript -e "cat( c( paste0( \"      \", .libPaths()), \"--\", \" \"), sep = \"\n\" )"
 
 echo "    - install dependencies"
-Rscript -e "install.packages( c( \"sodium\", \"openssl\", \"plumber\", \"jsonlite\", \"pool\", \"DBI\", \"digest\", \"uuid\", \"httr2\"), type = \"source\", destdir = \"/sources/R-packages\" )" >> /logs/openapx/auditor/install-r-packages.log
+Rscript -e "install.packages( c( \"sodium\", \"openssl\", \"plumber\", \"jsonlite\", \"pool\", \"DBI\", \"digest\", \"uuid\", \"httr2\"), type = \"source\", destdir = \"/sources/R-packages\" )" >> /logs/openapx/auditor/install-r-packages.log 2>&1
 
 echo "    - install cxapp"
-Rscript -e "install.packages( \"/sources/R-packages/${CXAPP_SOURCE}\", type = \"source\", INSTALL_opts = \"--install-tests\" )" >> /logs/openapx/auditor/install-r-packages.log
+Rscript -e "install.packages( \"/sources/R-packages/${CXAPP_SOURCE}\", type = \"source\", INSTALL_opts = \"--install-tests\" )" >> /logs/openapx/auditor/install-r-packages.log 2>&1
 
 echo "    - install auditor service"
-Rscript -e "install.packages( \"/sources/R-packages/${AUDITOR_SOURCE}\", type = \"source\", INSTALL_opts = \"--install-tests\" )" >> /logs/openapx/auditor/install-r-packages.log
+Rscript -e "install.packages( \"/sources/R-packages/${AUDITOR_SOURCE}\", type = \"source\", INSTALL_opts = \"--install-tests\" )" >> /logs/openapx/auditor/install-r-packages.log 2>&1
 
 echo "    - install postgresql dependencies"
-Rscript -e "install.packages( \"RPostgreSQL\", type = \"source\", destdir = \"/sources/R-packages\" )" >> /logs/openapx/auditor/install-r-packages.log
+Rscript -e "install.packages( \"RPostgreSQL\", type = \"source\", destdir = \"/sources/R-packages\" )" >> /logs/openapx/auditor/install-r-packages.log 2>&1
 
 #   restore working directory
 cd ${CURRENT_WD}
