@@ -231,6 +231,9 @@ rm -f ${APP_HOME}/.Rprofile
 echo "-- set up logging area"
 mkdir -p /data/auditor/logs
 
+chgrp -R auditor /data/auditor
+chmod -R g+rs /data/auditor
+
 
 
 # -- application example configuration
