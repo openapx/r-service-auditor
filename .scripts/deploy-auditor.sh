@@ -22,7 +22,7 @@ mkdir -p /logs/openapx/auditor
 
 echo "-- local vault"
 
-addgroup --system --quiet vaultreader
+addgroup --system --quiet vaultuser
 
 mkdir /.vault
 
