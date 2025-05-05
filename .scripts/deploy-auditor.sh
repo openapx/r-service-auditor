@@ -18,13 +18,36 @@ REPO_URL=https://cran.r-project.org
 mkdir -p /logs/openapx/auditor
 
 
+# -- local vault
+
+echo "-- local vault"
+
+addgroup --system --quiet vaultreader
+
+mkdir /.vault
+
+chgrp vaultuser /.vault 
+chmod g+rs,o-rwx /.vault
+
+
+
+
+# -- auditor service account
+
+echo "-- auditor service account"
+
+adduser --system --group --no-create-home --comment "auditor service user account" --quiet auditor
+
+usermod -a -G vaultuser auditor
+
+
+
+
 # -- initiate app home
 
 echo "-- initiate application install directory"
 
 mkdir -p ${APP_HOME}
-
-
 
 
 
@@ -150,13 +173,6 @@ find /sources/R-packages -maxdepth 1 -type f -exec bash -c '_MD5=($(md5sum $1));
 echo "   - (end of R package install sources)"
 
 
-
-
-# -- local vault
-
-echo "-- local vault"
-
-mkdir /.vault
 
 
 

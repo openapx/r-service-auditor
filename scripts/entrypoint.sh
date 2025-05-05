@@ -19,7 +19,7 @@ service postgresql start
 cd ${APP_HOME}
 
 # - API
-R --no-echo --no-restore --no-save -e "auditor.service::start( port = 7749 )" &
+su auditor -c bash -c 'R --no-echo --no-restore --no-save -e "auditor.service::start( port = 7749 )" &'
 
 
 # -- foreground keep-alive service
