@@ -280,7 +280,8 @@ VAULT.DATA = /.vault
 #    note: access tokens should be created 
 #    note: see reference section Authentication in the auditor service API reference
 #    note: see section API Authentication in the cxapp package https://github.com/cxlib/r-package-cxapp 
-API.AUTH.SECRETS = /example/auth/services/auditor/*
+#    note: service - utility /opt/openapx/utilities/vault-apitoken-service.sh <service name>
+API.AUTH.SECRETS = /api/auth/auditor/services/* /api/auth/auditor/users/*
 
 EOF
 
