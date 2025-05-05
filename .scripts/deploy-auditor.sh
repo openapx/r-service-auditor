@@ -36,7 +36,7 @@ chmod g+rs,o-rwx /.vault
 
 echo "-- auditor service account"
 
-adduser --system --group --no-create-home --comment "auditor service user account" --quiet auditor
+adduser --system --group --shell /bin/bash --no-create-home --comment "auditor service user account" --quiet auditor
 
 usermod -a -G vaultuser auditor
 
@@ -232,7 +232,7 @@ echo "-- set up logging area"
 mkdir -p /data/auditor/logs
 
 chgrp -R auditor /data/auditor
-chmod -R g+rs /data/auditor
+chmod -R g+rws /data/auditor
 
 
 
