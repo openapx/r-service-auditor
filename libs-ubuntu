@@ -1,0 +1,6 @@
+iproute2
+nginx
+libssl-dev
+libsodium-dev
+postgresql
+libpq-dev
