@@ -115,10 +115,6 @@ auditor_list <- function(x, connection = NULL ) {
     sql <- append( sql,
                    paste( "offset", as.character(rec_filter[["offset"]]), sep = " ") )
   
-  cat( c( "------------------", 
-          sql, 
-          "------------------"), sep = "\n" )
-
 
   # -- query database
     
