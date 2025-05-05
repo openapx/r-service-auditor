@@ -47,6 +47,10 @@ RUN /scripts/deploy-nginx-proxy.sh
 RUN rm -Rf /scripts
 
 
+# -- app utilities
+COPY --chmod=755 scripts/vault-apitoken-service.sh /opt/openapx/utilities/vault-apitoken-service.sh
+
+
 # -- app entrypoint 
 
 # app is configured for both HTTP (port 80) and HTTPS (port 443) but HTTP (port 80) is disabled
