@@ -3,4 +3,5 @@
 export(auditor_list)
 export(auditor_record)
 export(auditor_save)
+export(dev_appnode)
 export(start)
