@@ -66,7 +66,7 @@ http {
 upstream backend {
 
    # -- at one listening backend R session
-   server http://127.0.0.1:7749
+   server 127.0.0.1:7749;
    
    # -- do not edit
    #    managed by /entrypoint.sh

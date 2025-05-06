@@ -25,24 +25,33 @@ SERVICE_WORKERS=1
 if [ -f ${APP_HOME}/service.properties ]; then
 
   OPT_VALUE=
-  
-  while IFS='=' read -r KEY VALUE
-  do
-  
-      # - translate periods to underscores
-      KEY=$(echo "${KEY}" | tr '.' '_')
-      
-      # - values are lower case
-      OPT_VALUE=$(echo "${VALUE}" | tr '[:upper:]' '[:lower:]')
-  
-      eval SERVICE_${KEY}=\${OPT_VALUE}
-  
-      OPT_VALUE=
-  
-  done < "service.properties"
-  
-fi
 
+  while IFS='=' read -r KEY VALUE; do
+
+
+    # - translate periods to underscores
+    KEY=$(echo "${KEY}" | tr '.' '_' | tr '[:lower:]' '[:upper:]' )
+
+    # - values are lower case
+    OPT_VALUE=$(echo "${VALUE}" | tr '[:upper:]' '[:lower:]')
+
+    case ${KEY} in
+      LOCAL_DATABASE)
+         SERVICE_LOCAL_DATABASE=${OPT_VALUE}
+      ;;
+      WORKERS)
+         SERVICE_WORKERS=${OPT_VALUE}
+      ;;
+      *)
+      ;;
+    esac
+
+
+    OPT_VALUE=
+
+ done <<< $(sed -e 's/[[:space:]]*#.*// ; /^[[:space:]]*$/d' ${APP_HOME}/service.properties)
+
+fi
 
 # -- local database configuration
 
@@ -85,7 +94,7 @@ if [ ${SERVICE_WORKERS} -ge 1 ]; then
 
     if [ -z "${CHK_CONFIG}" ]; then
       # amend nginx config
-      NGINX_WORKER_CONFIG="${NGINX_WORKER_CONFIG}    server http://127.0.0.1:${ADD_PORT};\n"
+      NGINX_WORKER_CONFIG="${NGINX_WORKER_CONFIG}    server 127.0.0.1:${ADD_PORT};\n"
     fi
 
     CHK_CONFIG=
