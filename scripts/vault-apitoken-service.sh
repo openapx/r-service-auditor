@@ -33,7 +33,7 @@ mkdir -p /.vault/api/auth/auditor/services
 echo "${JSON}" > /.vault/api/auth/auditor/services/${TOKEN_PRINCIPAL}
 
 
-root@a31589470a7e:/opt/openapx/utilities#
+
 # -- print clear text token
 
 echo " "
