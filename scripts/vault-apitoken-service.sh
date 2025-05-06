@@ -22,7 +22,7 @@ fi
 CLRTXT=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 40)
 
 # -- encode token
-ENCODEDTXT=$(cd ${APP_HOME}; Rscript -e 'cat( cxapp:::.cxapp_apitokenencode("${CLRTXT}"), sep = "" )')
+ENCODEDTXT=$(cd ${APP_HOME}; Rscript -e "cat( cxapp:::.cxapp_apitokenencode(\"${CLRTXT}\"), sep = \"\" )")
 
 # - generate secret
 JSON="{ \"scope\": \"${TOKEN_SCOPE}\", \"principal\": \"${TOKEN_PRINCIPAL}\", \"value\": \"${ENCODEDTXT}\" }"

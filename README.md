@@ -148,15 +148,14 @@ _Please note that currently only PostgreSQL database is supported_.
 There are three standard directories.
 
 - `/data` for service logs and other service data files
-- `/dbdata` for database data files when local database is enabled
 - `/.vault` used for a local internal vault
 
 <br/>
 
 
 ```
-# -- default service configuration
 
+# -- default service configuration
 
 # -- database
 #    note: only supported vendor is postgres
@@ -171,7 +170,7 @@ DB.DATABASE = auditor
 #    note: the auditorsvc password for the local database is generated when  
 #          /entrypoint.sh is executed and local database is enabled
 DB.USERNAME = auditorsvc
-DB.PASSWORD = [vault] /dblocal/auditor/password
+DB.PASSWORD = [vault] /dblocal/auditorsvc/password
 
 
 
@@ -193,10 +192,30 @@ VAULT.DATA = /.vault
 #    note: access tokens should be created 
 #    note: see reference section Authentication in the auditor service API reference
 #    note: see section API Authentication in the cxapp package https://github.com/cxlib/r-package-cxapp 
-API.AUTH.SECRETS = /test/auth/services/auditor/*
+#    note: service - utility /opt/openapx/utilities/vault-apitoken-service.sh <service name>
+API.AUTH.SECRETS = /api/auth/auditor/services/* /api/auth/auditor/users/*
 
 ```
 
+<br/>
+
+##### Creating API Bearer Token 
+
+The auditor container image is pre-configured to use the local vault to store
+encoded authentication tokens that can be used to authenticate with the API.
+
+The default configuration is to look for registered tokens with prefix 
+`/api/auth/auditor/services` and `/api/auth/auditor/users` in the local vault.
+
+The utility vault API service token utility can be used to create a token 
+associated with a named service.
+```
+/opt/openapx/utilities/vault-apitoken-service.sh <service name>
+```
+
+For further details, see API Authentication section for the cxapp R package. 
+
+<br/>
 <br/>
 
 #### As an R Package
