@@ -19,7 +19,8 @@
 function( req, res ) {
   
   # -- default attributes
-  log_attributes <- c( base::toupper(req$REQUEST_METHOD), 
+  log_attributes <- c( auditor.service::dev_appnode(),
+                       base::toupper(req$REQUEST_METHOD), 
                        req$REMOTE_ADDR, 
                        req$PATH_INFO )
   
@@ -162,9 +163,11 @@ function( req, res ) {
 function( req, res ) {
   
   # -- default attributes
-  log_attributes <- c( base::toupper(req$REQUEST_METHOD), 
+  log_attributes <- c( auditor.service::dev_appnode(),
+                       base::toupper(req$REQUEST_METHOD), 
                        req$REMOTE_ADDR, 
                        req$PATH_INFO )
+  
   
   
   # -- Authorization
@@ -267,9 +270,11 @@ function( id, req, res ) {
   
   
   # -- default attributes
-  log_attributes <- c( base::toupper(req$REQUEST_METHOD), 
+  log_attributes <- c( auditor.service::dev_appnode(),
+                       base::toupper(req$REQUEST_METHOD), 
                        req$REMOTE_ADDR, 
                        req$PATH_INFO )
+  
   
   
   # -- Authorization
@@ -353,7 +358,7 @@ function( id, req, res ) {
 }
 
 
-#* Ping service
+#* Service information
 #* 
 #* @get /api/info
 #* 
@@ -369,10 +374,11 @@ function( req, res ) {
   cfg <- cxapp::.cxappconfig()
   
   
-  # -- default attributes
-  log_attributes <- c( base::toupper(req$REQUEST_METHOD), 
+  log_attributes <- c( auditor.service::dev_appnode(),
+                       base::toupper(req$REQUEST_METHOD), 
                        req$REMOTE_ADDR, 
                        req$PATH_INFO )
+  
   
   
   # -- Authorization
@@ -481,6 +487,7 @@ function( req, res ) {
 #* Ping service
 #* 
 #* @get /api/ping
+#* @head /api/ping
 #* 
 #* @response 200 OK
 #* @response 500 Internal Error

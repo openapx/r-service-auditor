@@ -44,21 +44,29 @@
 
 start <- function( port = 12345 ) {
   
+  
+  # -- default log attributes
+  log_attr <- auditor.service::dev_appnode()
+  
+  
   # -- load configuration
   cfg <- cxapp::.cxappconfig()
-  
-  
+
+
   # -- set up database pool
 
   db_required_cfg <- c( "db.vendor", "db.driver", "db.host", "db.port", "db.username", "db.password" )  
   
   for ( xopt in db_required_cfg )
     if ( is.na( cfg$option( xopt, unset = NA ) ) ) {
-      cxapp::cxapp_log( paste( "Property", base::toupper(xopt), "required and not defined" ) )
+      cxapp::cxapp_log( paste( "Property", base::toupper(xopt), "required and not defined" ), attr = log_attr )
       stop(paste( "Property", base::toupper(xopt), "required and not defined" ))
     }
 
 
+  cxapp::cxapp_log( paste0("Starting API session (listen port ", as.character(port), ")" ), attr = log_attr )
+
+    
   # - remove existing pool  
   if ( base::exists( ".auditor.dbpool", envir = .GlobalEnv) )
     rm( list = ".auditor.dbpool", envir = .GlobalEnv )
@@ -84,7 +92,7 @@ start <- function( port = 12345 ) {
                            paste0( "(port ", cfg$option( "DB.PORT", unset = "NA"), ")"),
                            "started with",
                            cfg$option( "DB.POOL.MINSIZE", unset = 1), "minimum and",
-                           cfg$option( "DB.POOL.MAXSIZE", unset = 25), "maximum connections.") )
+                           cfg$option( "DB.POOL.MAXSIZE", unset = 25), "maximum connections."), attr = log_attr )
   
   # - add routine to close connection pool on exit
 
@@ -120,11 +128,6 @@ start <- function( port = 12345 ) {
                    port = Sys.getenv("API_PORT", unset = port ), 
                    quiet = TRUE )
   
-  
-  
-  # -- close database pool
-  
-  # -- remove existing pool  
-  
+
   
 }

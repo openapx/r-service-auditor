@@ -26,6 +26,8 @@ A record is defined by a set of standard notations.
 \item \code{object} optional hash representing the object regardless of context
 \item \code{label} short human readable description of the event
 \item \code{actor} user or service that initiated/triggered the event
+\item \code{env} is a reference to the application, service or host environment
+where the event occurred
 \item \code{attributes} a list of attributes associated with the event
 }
 
