@@ -111,7 +111,7 @@ fi
 # -- launch one R sessions for each worker port
 for R_SESSION_PORT in ${WORKER_PORTS}; do
   # - launch API
-  su auditor -c bash -c 'R --no-echo --no-restore --no-save -e "auditor.service::start( port = ${R_SESSION_PORT} )" &'
+  su auditor -c bash -c "R --no-echo --no-restore --no-save -e \"auditor.service::start( port = ${R_SESSION_PORT} )\" &"
 done
 
 
