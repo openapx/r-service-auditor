@@ -1,5 +1,4 @@
 #! /bin/bash
-
 #
 # Container entrypoint for container services
 #
@@ -10,16 +9,102 @@
 export APP_HOME=/opt/openapx/apps/auditor
 
 
-# -- start postgreSQL
-service postgresql start
+
+# -- default service state
+
+# - disable local database
+SERVICE_LOCAL_DATABASE=disable
+
+# - default number of worker sessions 
+# - defaults to a single worker
+SERVICE_WORKERS=1
+
+
+# -- read serive.properties file ... if it exists
+
+if [ -f ${APP_HOME}/service.properties ]; then
+
+  OPT_VALUE=
+  
+  while IFS='=' read -r KEY VALUE
+  do
+  
+      # - translate periods to underscores
+      KEY=$(echo "${KEY}" | tr '.' '_')
+      
+      # - values are lower case
+      OPT_VALUE=$(echo "${VALUE}" | tr '[:upper:]' '[:lower:]')
+  
+      eval SERVICE_${KEY}=\${OPT_VALUE}
+  
+      OPT_VALUE=
+  
+  done < "service.properties"
+  
+fi
+
+
+# -- local database configuration
+
+if [ ${SERVICE_LOCAL_DATABASE} = "enable" ]; then
+
+  # -- start postgreSQL
+  service postgresql start
+
+fi
+
 
 
 # -- background services
 
 cd ${APP_HOME}
 
-# - API
-su auditor -c bash -c 'R --no-echo --no-restore --no-save -e "auditor.service::start( port = 7749 )" &'
+
+# - worker configuration
+#   note: should be dynamic at some point to find available ports
+
+FIRST_PORT=7749
+WORKER_PORTS=${FIRST_PORT}
+
+NGINX_CONF=/etc/nginx/nginx.conf
+NGINX_WORKER_CONFIG=
+
+if [ ${SERVICE_WORKERS} -ge 1 ]; then
+
+  for (( i = 1; i < ${SERVICE_WORKERS}; ++i )); do
+
+    # -- define port
+    ADD_PORT=$((FIRST_PORT + ${i} ))
+
+    # -- add to workers
+    WORKER_PORTS="${WORKER_PORTS} ${ADD_PORT}"
+
+    # - check if port is in nginx config
+    #
+    CHK_CONFIG=$( grep "${ADD_PORT}" ${NGINX_CONF} | tr ';' ' ' | tr '\n' ' ' )
+
+    if [ -z "${CHK_CONFIG}" ]; then
+      # amend nginx config
+      NGINX_WORKER_CONFIG="${NGINX_WORKER_CONFIG}    server http://127.0.0.1:${ADD_PORT};\n"
+    fi
+
+    CHK_CONFIG=
+
+  done
+
+  # -- update nginx.conf with amended configuration
+  if [ ! -z "${NGINX_WORKER_CONFIG}" ]; then
+    sed -i "/# -- entrypoint: add additional worker ports --/a ${NGINX_WORKER_CONFIG}" ${NGINX_CONF}
+  fi
+fi
+
+
+# -- launch one R sessions for each worker port
+for R_SESSION_PORT in ${WORKER_PORTS}; do
+  # - launch API
+  su auditor -c bash -c 'R --no-echo --no-restore --no-save -e "auditor.service::start( port = ${R_SESSION_PORT} )" &'
+done
+
 
 
 # -- foreground keep-alive service

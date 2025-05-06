@@ -62,12 +62,25 @@ events {
       
 http {
 
+
+upstream backend {
+
+   # -- at one listening backend R session
+   server http://127.0.0.1:7749
+   
+   # -- do not edit
+   #    managed by /entrypoint.sh
+   # -- entrypoint: add additional worker ports --
+
+
+}
+
 server {
     listen              80;
     server_name         www.example.com;
     
     location /api {
-      proxy_pass http://127.0.0.1:${API_PORT};
+      proxy_pass http://backend;
     }
 }
 
@@ -80,7 +93,7 @@ server {
     ssl_ciphers         HIGH:!aNULL:!MD5;
     
     location /api {
-      proxy_pass http://127.0.0.1:${API_PORT};
+      proxy_pass http://backend;
     }
 
 }
