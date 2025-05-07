@@ -111,11 +111,15 @@ or as the R package `auditor.service`.
 
 #### Container Image on Docker Hub 
 
-The auditor service container image is available for multiple Linux operating 
-system flavors depending on your organization preference.
+The auditor service container image will be available for multiple Linux operating 
+system flavors and R versions depending on your organization preference.
+
+The container images are available on Docker Hub at [https://hub.docker.com/repository/docker/openapx/auditorservice/general](https://hub.docker.com/repository/docker/openapx/auditorservice/general).
+
+For now, the current effort is focused on Ubuntu and R version 4.4.3.
 
 ```
-docker pull openapx/auditor.service:<OS>-latest
+docker pull openapx/auditor.service:<OS>-latest-<R version>
 ```
 
 or choose a particular container image version.
