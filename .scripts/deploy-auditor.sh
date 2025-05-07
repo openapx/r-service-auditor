@@ -287,6 +287,25 @@ EOF
 
 
 
+# -- application example configuration
+
+echo "-- example service configuration"
+echo "   - enable local database"
+echo "   - enable 5 worker sessions"
+
+
+cat <<\EOF > ${APP_HOME}/service.properties 
+
+# -- default service configuration
+
+# -- local database
+LOCAL.DATABASE=enable
+
+# -- number of parallel R session to serve requests
+WORKERS=5
+
+EOF
+
 
 
 # -- clean-up

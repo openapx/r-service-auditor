@@ -17,6 +17,10 @@ system.
 
 <br/>
 
+The very end includes a set of simple examples using the Auditor service with R.
+
+<br/>
+
 ### The Audit Record
 
 The _audit record_ represent a noted event, change, action or occurrence for or on
@@ -148,15 +152,14 @@ _Please note that currently only PostgreSQL database is supported_.
 There are three standard directories.
 
 - `/data` for service logs and other service data files
-- `/dbdata` for database data files when local database is enabled
 - `/.vault` used for a local internal vault
 
 <br/>
 
 
 ```
-# -- default service configuration
 
+# -- default service configuration
 
 # -- database
 #    note: only supported vendor is postgres
@@ -171,7 +174,7 @@ DB.DATABASE = auditor
 #    note: the auditorsvc password for the local database is generated when  
 #          /entrypoint.sh is executed and local database is enabled
 DB.USERNAME = auditorsvc
-DB.PASSWORD = [vault] /dblocal/auditor/password
+DB.PASSWORD = [vault] /dblocal/auditorsvc/password
 
 
 
@@ -193,10 +196,30 @@ VAULT.DATA = /.vault
 #    note: access tokens should be created 
 #    note: see reference section Authentication in the auditor service API reference
 #    note: see section API Authentication in the cxapp package https://github.com/cxlib/r-package-cxapp 
-API.AUTH.SECRETS = /test/auth/services/auditor/*
+#    note: service - utility /opt/openapx/utilities/vault-apitoken-service.sh <service name>
+API.AUTH.SECRETS = /api/auth/auditor/services/* /api/auth/auditor/users/*
 
 ```
 
+<br/>
+
+##### Creating API Bearer Token 
+
+The auditor container image is pre-configured to use the local vault to store
+encoded authentication tokens that can be used to authenticate with the API.
+
+The default configuration is to look for registered tokens with prefix 
+`/api/auth/auditor/services` and `/api/auth/auditor/users` in the local vault.
+
+The utility vault API service token utility can be used to create a token 
+associated with a named service.
+```
+/opt/openapx/utilities/vault-apitoken-service.sh <service name>
+```
+
+For further details, see API Authentication section for the cxapp R package. 
+
+<br/>
 <br/>
 
 #### As an R Package
@@ -722,5 +745,286 @@ The logging mechanism supports the following configuration options.
 - `LOG.RORTATION` defines the period of log file rotation. Valid rotations are `YEAR`, `MONTH` and `DAY. The rotation period follows the format four digit year and two digit month and day.
 
 See `cxapp::cxapp_log()` for additional details. 
+
+
+<br/>
+<br/>
+
+### Examples 
+
+The first set of examples shared is using R. 
+
+But before we start, we need an access token to authenticate with for each 
+request.
+
+<br/>
+
+#### Creating an Access Token
+All requests, except a simple ping to the Auditor service requires a token to 
+authenticate with. 
+
+The standard container image includes a local secrets vault that can be used
+for exploring the service and a simple utility to generate a service token. 
+
+```
+$ docker exec <container>  /opt/openapx/utilities/vault-apitoken-service.sh <name>
+```
+
+The example uses the `docker` utility assuming you are running the container image
+with something like Docker Desktop. If you are hosting the Auditor service in a 
+cluster or some other utility, use the appropriate utility or tool.
+
+The `vault-apitoken-service.sh` utility prints a token in clear text as output. 
+This is the token value used for requests to use.
+
+```
+Token
+----------------------------------------------------
+an4wAtwXuPK0NVk3P7NdPftkaQWFN2UFewbyrqLd
+```
+
+The token identifies the requestor, so any log entries will use `<name>`. It is 
+good practice that each service or user is given a unique token so that the 
+requests can be easily identified.
+
+<br/>
+
+#### Using R with Auditor
+
+The following is a set of simple step-by-step examples that demonstrate how 
+the Auditor service works using plain R and the httr2 package.
+
+To make the examples work, we define two standard objects, the first is the URL
+(including the port number). Auditor supports both HTTP (port 80) and HTTPS
+(port 443). Below, port 81 is used as an example.
+
+The second object is the access token.
+
+```
+url_to_auditor <- "http://auditor.example.com:81"
+my_token_in_clear_text <- "<access token>"
+```
+<br/>
+
+##### Service Information
+Information on the service and service configuration can easily be obtained.
+
+```
+# -- service information
+#    GET /api/info
+
+info <- httr2::request( url_to_auditor ) |>
+  httr2::req_url_path("/api/info") |>
+  httr2::req_method("GET") |>
+  httr2::req_auth_bearer_token( my_token_in_clear_text ) |>
+  httr2::req_perform() |>
+  httr2::resp_body_json()
+```
+
+The result is a list of named entries.
+
+<br/>
+
+#### Create a single audit record
+An audit record can be created. Note that the record contains both main 
+record properties, such as the event, object references, a label, etc., and
+attribute, the file path in our example.
+
+We simulate an object hash, which for a file should really be the files message 
+digest, or sometimes simply referred to as a digest, hash, checksum, fingerprint, 
+etc.
+
+```
+# -- create single audit record for a "file"
+#    POST /api/records
+
+# note: simulated 
+# note: should really be digest::digest( "/some/path/to/outputs/t_ae.pdf" ), algo = "sha1", file = TRUE )
+simulated_object_hash <- digest::digest( paste0( format( as.POSIXct(Sys.time()), format = "%Y%m%dT%H%M%S"),
+                                                 "/some/path/to/outputs/t_ae.pdf" ), algo = "sha1", file = FALSE )
+                                                
+
+audit_rec <- list( "event" = "update", 
+                   "type" = "file", 
+                   "class" = "pdf", 
+                   "reference" = "t_ae", 
+                   "object" = simulated_object_hash, 
+                   "label" = utils::URLencode("Create output T_AE.pdf"), 
+                   "actor" = "me", 
+                   "env" = "rworkbench.example.com", 
+                   "datetime" = format( as.POSIXct(Sys.time()), format = "%Y%m%dT%H%M%S"), 
+                   "attributes" = list( list( "key" = "path", 
+                                              "value" = utils::URLencode("/some/path/to/outputs/t_ae.pdf") ) )
+                   ) 
+
+create_single_record <- httr2::request( url_to_auditor ) |>
+  httr2::req_url_path("/api/records") |>
+  httr2::req_method("POST") |>
+  httr2::req_auth_bearer_token( my_token_in_clear_text ) |>
+  httr2::req_body_json( audit_rec ) |>
+  httr2::req_perform() |>
+  httr2::resp_body_json()
+```
+
+The result is a list with the message that one record was created.
+
+<br/>
+
+##### Create multiple audit records at one time
+The Auditor service can also create multiple records at one time. 
+
+In modern systems, solutions and environments, what seems as a simple action 
+can affect many different directories, files, entries and other related items 
+that all need to be tracked rather than assuming that you know that one change 
+to one item will naturally cascade into other changes.
+
+Another feature of Auditor is that it keeps these records linked. Unfortunately, 
+you cannot currently add links after the records have been created.
+
+```
+# -- create multiple audit records for a "file"
+#    note: scenario is simple ... 
+#     (1) update file t_ae.pdf on rworkbench.example.com
+#     (2) copy the same file to otherenvironment.example.com
+#
+#    POST /api/records
+
+# note: simulated 
+# note: should really be digest::digest( "/some/path/to/outputs/t_ae.pdf" ), algo = "sha1", file = TRUE )
+simulated_object_hash <- digest::digest( paste0( format( as.POSIXct(Sys.time()), format = "%Y%m%dT%H%M%S"),
+                                                 "/some/path/to/outputs/t_ae.pdf" ), algo = "sha1", file = FALSE )
+
+audit_recs <- list( list( "event" = "update", 
+                          "type" = "file", 
+                          "class" = "pdf", 
+                          "reference" = "t_ae", 
+                          "object" = simulated_object_hash, 
+                          "label" = utils::URLencode("Update output T_AE.pdf"), 
+                          "actor" = "me", 
+                          "env" = "rworkbench.example.com", 
+                          "datetime" = format( as.POSIXct(Sys.time()), format = "%Y%m%dT%H%M%S"), 
+                          "attributes" = list( list( "key" = "path", 
+                                                     "value" = utils::URLencode("/some/path/to/outputs/t_ae.pdf") ) ) 
+                    ), 
+                    list( "event" = "create", 
+                          "type" = "file", 
+                          "class" = "pdf", 
+                          "reference" = "t_ae", 
+                          "object" = simulated_object_hash, 
+                          "label" = utils::URLencode("Create output T_AE.pdf"), 
+                          "actor" = "me", 
+                          "env" = "otherenvironment.example.com", 
+                          "datetime" = format( as.POSIXct(Sys.time()), format = "%Y%m%dT%H%M%S"), 
+                          "attributes" = list( list( "key" = "path", 
+                                                     "value" = utils::URLencode("/some/other/path/to/outputs/t_ae.pdf") ) ) 
+                    )
+                 )
+                    
+
+                    
+create_multiple_records <- httr2::request( url_to_auditor ) |>
+  httr2::req_url_path("/api/records") |>
+  httr2::req_method("POST") |>
+  httr2::req_auth_bearer_token( my_token_in_clear_text ) |>
+  httr2::req_body_json( audit_recs ) |>
+  httr2::req_perform() |>
+  httr2::resp_body_json()
+```
+
+As in the previous example, this returns a message that two records were created.
+
+<br/>
+
+#### Listing audit records
+We can retrieve a list of audit records with our example below using default
+filter options. These include sort order, date windows, limit to the number 
+of records and so on.
+
+```
+# -- list records
+#    note: see the defaults for returning a list of records
+#    GET /api/records
+
+record_lst <- httr2::request( url_to_auditor ) |>
+  httr2::req_url_path("/api/records") |>
+  httr2::req_method("GET") |>
+  httr2::req_auth_bearer_token( my_token_in_clear_text ) |>
+  httr2::req_perform() |>
+  httr2::resp_body_json()
+```
+
+The return is a nested list with each record as a list entry.
+
+<br/>
+
+##### Filtering the list of audit records
+We can just as easily filter the list of audit records. In our example below, 
+we will retrieve the audit records that are associated with the simulated object
+we used in our example for creating multiple records from before. Note the code
+`httr2::req_url_query( "object" = simulated_object_hash )`.
+
+```
+# - now list them (filter on our object)
+#   note: all records that have the object reference will be returned
+#   note: the audit trail tracks "objects" by their content and not by the path
+#
+#   GET /api/records?object=<object hash>
+
+record_lst_for_our_object <- httr2::request( url_to_auditor ) |>
+  httr2::req_url_path("/api/records") |>
+  httr2::req_url_query( "object" = simulated_object_hash ) |>
+  httr2::req_method("GET") |>
+  httr2::req_auth_bearer_token( my_token_in_clear_text ) |>
+  httr2::req_perform() |>
+  httr2::resp_body_json()
+
+```
+The return is a list of audit records that are associated with our simulated 
+object.
+
+Do note the `env` property of both records. They refer to different environments.
+Using this approach, we can track files, as one example, when they are copied, 
+moved, staged, etc across environments. And it is not just the file, it is
+the version of the file (different versions of a file means different content and
+that means a different message digest).
+
+We can use the combination of `type`, `class` and `reference` to track all the
+different versions of a particular file as well.
+
+<br/>
+
+##### A single audit record
+Our last example is simply retrieving a single audit record by the audit record
+`id` property.
+
+In the example below, we use the `id` for the first record in the preceding
+example. The record is identified here by the code
+`httr2::req_url_path_append( record_lst_for_our_object[[1]][["id"]] )`.
+
+```
+# - list the first returned object ... but look at the record link property
+#   note: records created at the same time are linked
+#   GET /api/records/<id>
+
+first_record_lst_for_our_object <- httr2::request( url_to_auditor ) |>
+  httr2::req_url_path("/api/records") |>
+  httr2::req_url_path_append( record_lst_for_our_object[[1]][["id"]] ) |>
+  httr2::req_url_query( "object" = simulated_object_hash ) |>
+  httr2::req_method("GET") |>
+  httr2::req_auth_bearer_token( my_token_in_clear_text ) |>
+  httr2::req_perform() |>
+  httr2::resp_body_json()
+
+```
+
+Returned is a nested list of named entries that includes all the main record
+properties as well as the record attributes and, in this case, _links_. 
+
+The record returned should be one of the records included when we created 
+multiple records. The `links` entries are reference to each one of the other 
+audit records that were created. 
+
+
+
 
 
