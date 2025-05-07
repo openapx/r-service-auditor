@@ -21,8 +21,8 @@ mkdir -p  ${OPENAPX_SSL_HOME} $(dirname ${OPENAPX_SSL_CERT}) $(dirname ${OPENAPX
 
 # - certificate files
 
-OPENAPX_SSL_CERT=$(mktemp --tmpdir=${OPENAPX_SSL_HOME}/certs cert-openapx-rcxservice-XXXXXXXXXXXXXXXXX --suffix=.pem)
-OPENAPX_SSL_KEY=$(mktemp --tmpdir=${OPENAPX_SSL_HOME}/private key-openapx-rcxservice-XXXXXXXXXXXXXXXXX --suffix=.pem)
+OPENAPX_SSL_CERT=$(mktemp --tmpdir=${OPENAPX_SSL_HOME}/certs cert-openapx-auditor-XXXXXXXXXXXXXXXXX --suffix=.pem)
+OPENAPX_SSL_KEY=$(mktemp --tmpdir=${OPENAPX_SSL_HOME}/private key-openapx-auditor-XXXXXXXXXXXXXXXXX --suffix=.pem)
 
 # - generate cert
 
@@ -30,10 +30,10 @@ openssl req -x509 -newkey rsa:4096 \
         -keyout ${OPENAPX_SSL_KEY} \
         -out ${OPENAPX_SSL_CERT} \
         -sha256 -days 3650 -nodes \
-        -subj "/C=XX/ST=XX/L=Interwebs/O=openapx/OU=services/CN=rcxservice" 2>/dev/null
+        -subj "/C=XX/ST=XX/L=Interwebs/O=openapx/OU=services/CN=auditor" 2>/dev/null
         
-ln -s ${OPENAPX_SSL_CERT} ${OPENAPX_SSL_HOME}/certs/cert-openapx-rcxservice.pem
-ln -s ${OPENAPX_SSL_KEY} ${OPENAPX_SSL_HOME}/private/key-openapx-rcxservice.pem
+ln -s ${OPENAPX_SSL_CERT} ${OPENAPX_SSL_HOME}/certs/cert-openapx-auditor.pem
+ln -s ${OPENAPX_SSL_KEY} ${OPENAPX_SSL_HOME}/private/key-openapx-auditor.pem
         
 
 # -- configure nginx with cert
@@ -87,8 +87,8 @@ server {
 server {
     listen              443 ssl;
     server_name         www.example.com;
-    ssl_certificate     ${OPENAPX_SSL_HOME}/certs/cert-openapx-rcxservice.pem;
-    ssl_certificate_key ${OPENAPX_SSL_HOME}/private/key-openapx-rcxservice.pem;
+    ssl_certificate     ${OPENAPX_SSL_HOME}/certs/cert-openapx-auditor.pem;
+    ssl_certificate_key ${OPENAPX_SSL_HOME}/private/key-openapx-auditor.pem;
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_ciphers         HIGH:!aNULL:!MD5;
     
