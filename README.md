@@ -456,9 +456,9 @@ array with each record as a separate JSON object.
 ```
 
 The `event` defines the event or action that the audit record represents. Valid
-values are `create`, `read`, `update`, `delete`, `execute`, `sign`, `connect` 
-and `disconnect`. The event value is case in-sensitive but represented in lower 
-case.
+values are `create`, `read`, `update`, `delete`, `execute`, `fail`, `commit`, 
+`lock`, `unlock`, `sign`, `connect` and `disconnect`. The event value is case
+in-sensitive but represented in lower case.
 
 The object `type`, `class` and `reference` are case in-sensitive keywords and
 references used to programmatically represent the object. Valid characters are
