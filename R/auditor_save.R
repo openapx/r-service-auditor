@@ -23,7 +23,8 @@
 #' }
 #' 
 #' The `event` is one of the case in-sensitive values `create`, `read`, `update`,
-#' `delete`, `execute`, `sign`, `connect` or `disconnect`.
+#' `delete`, `execute`, `fail`, `commit`, `lock`, `unlock`, `sign`, `connect` 
+#' or `disconnect`.
 #' 
 #' If `class` is not specified for an audited event, the value of `type` is used.
 #' 
@@ -70,8 +71,14 @@ auditor_save <- function( x, connection = NULL ) {
   
   # - valid events
   #   note: here upper case but case insensitive and stored and returned as lower case
-  supported_events <- c( "CREATE", "READ", "UPDATE", "DELETE", "EXECUTE", "SIGN", "CONNECT", "DISCONNECT" )
+  supported_events <- c( "CREATE", "READ", "UPDATE", "DELETE",
+                         "EXECUTE", "FAIL",
+                         "COMMIT",
+                         "LOCK", "UNLOCK",
+                         "SIGN", "CONNECT", "DISCONNECT" )
 
+  
+  
   attr_maxlengths <- c( "event" = 50, "type" = 100, "reference" = 2048, "object" = 128, "label" = 512, "actor" = 512, "env" = 512,  
                         "attr.key" = 1024, "attr.label" = 512, "attr.qual" = 50, "attr.qualifier" = 50, "attr.value" = 1024  )
   
