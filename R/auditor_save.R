@@ -241,7 +241,7 @@ auditor_save <- function( x, connection = NULL ) {
         qual <- ""
         
         if ( any( c("qual", "qualifier") %in% names(xattr) ) )
-          qual <- utils::URLencode( base::trimws(utils::head(xattr[ c( "qual", "qualifier") ], n = 1)), reserved = TRUE )
+          qual <- utils::URLencode( base::trimws(utils::head(xattr[ base::names(xattr) %in% c( "qual", "qualifier") ], n = 1)), reserved = TRUE )
 
 
         
